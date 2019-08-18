@@ -244,6 +244,7 @@ public class Util {
         if(files==null)
             return new ArrayList<File>(0);
         List<File> filelist = Arrays.asList(files);
+        //通过比较zxid进行排序
         Collections.sort(filelist, new DataDirFileComparator(prefix, ascending));
         return filelist;
     }

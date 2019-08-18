@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -86,6 +86,7 @@ public class QuorumPeerMain {
     public static void main(String[] args) {
         QuorumPeerMain main = new QuorumPeerMain();
         try {
+            //zookeeper启动入口
             main.initializeAndRun(args);
         } catch (IllegalArgumentException e) {
             LOG.error("Invalid arguments, exiting abnormally", e);
@@ -137,17 +138,16 @@ public class QuorumPeerMain {
     }
 
     public void runFromConfig(QuorumPeerConfig config)
-            throws IOException, AdminServerException
-    {
-      try {
-          ManagedUtil.registerLog4jMBeans();
-      } catch (JMException e) {
-          LOG.warn("Unable to register log4j JMX control", e);
-      }
+            throws IOException, AdminServerException {
+        try {
+            ManagedUtil.registerLog4jMBeans();
+        } catch (JMException e) {
+            LOG.warn("Unable to register log4j JMX control", e);
+        }
 
-      LOG.info("Starting quorum peer");
+        LOG.info("Starting quorum peer");
       MetricsProvider metricsProvider;
-      try {
+        try {
         metricsProvider = MetricsProviderBootstrap
                       .startMetricsProvider(config.getMetricsProviderClassName(),
                                             config.getMetricsProviderConfiguration());
@@ -157,8 +157,8 @@ public class QuorumPeerMain {
       }
       try {
           ServerMetrics.metricsProviderInitialized(metricsProvider);
-          ServerCnxnFactory cnxnFactory = null;
-          ServerCnxnFactory secureCnxnFactory = null;
+            ServerCnxnFactory cnxnFactory = null;
+            ServerCnxnFactory secureCnxnFactory = null;
 
           if (config.getClientPortAddress() != null) {
               cnxnFactory = ServerCnxnFactory.createFactory();
@@ -225,7 +225,8 @@ public class QuorumPeerMain {
           if(config.jvmPauseMonitorToRun) {
               quorumPeer.setJvmPauseMonitor(new JvmPauseMonitor(config));
           }
-
+          //quorumPeer:zookeeper中的大多数的节点
+          //初始化quorumPeer并启动
           quorumPeer.start();
           quorumPeer.join();
       } catch (InterruptedException e) {
@@ -239,7 +240,7 @@ public class QuorumPeerMain {
                   LOG.warn("Error while stopping metrics", error);
               }
           }
-      }
+        }
     }
 
     // @VisibleForTesting

@@ -23,6 +23,7 @@ import java.io.IOException;
 /**
  * Interface that all the Deserializers have to implement.
  *
+ * zookeeper 序列化接口
  */
 public interface InputArchive {
     public byte readByte(String tag) throws IOException;

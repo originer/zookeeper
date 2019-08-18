@@ -151,6 +151,7 @@ public class FileTxnLog implements TxnLog {
     long dbId;
     private final Queue<FileOutputStream> streamsToFlush = new ArrayDeque<>();
     File logFileWrite = null;
+    //文件填充工具
     private FilePadding filePadding = new FilePadding();
 
     private ServerStats serverStats;
@@ -254,16 +255,18 @@ public class FileTxnLog implements TxnLog {
 
     /**
      * append an entry to the transaction log
-     * @param hdr the header of the transaction
-     * @param txn the transaction part of the entry
+     * @param hdr the header of the transaction 头部事务
+     * @param txn the transaction part of the entry 需要添加的事务
      * returns true iff something appended, otw false
      */
     public synchronized boolean append(TxnHeader hdr, Record txn)
         throws IOException
     {
+        //若头部事务为空，直接返回
         if (hdr == null) {
             return false;
         }
+        //事务的zxid要<=lastZxidSeen
         if (hdr.getZxid() <= lastZxidSeen) {
             LOG.warn("Current zxid " + hdr.getZxid()
                     + " is <= " + lastZxidSeen + " for "
@@ -271,6 +274,7 @@ public class FileTxnLog implements TxnLog {
         } else {
             lastZxidSeen = hdr.getZxid();
         }
+        //填充logStream
         if (logStream==null) {
            if(LOG.isInfoEnabled()){
                 LOG.info("Creating new log file: " + Util.makeLogName(hdr.getZxid()));
@@ -287,14 +291,17 @@ public class FileTxnLog implements TxnLog {
            filePadding.setCurrentSize(fos.getChannel().position());
            streamsToFlush.add(fos);
         }
+        //填充数据
         filePadding.padFile(fos.getChannel());
         byte[] buf = Util.marshallTxnEntry(hdr, txn);
         if (buf == null || buf.length == 0) {
             throw new IOException("Faulty serialization for header " +
                     "and txn");
         }
+        //生成校验值
         Checksum crc = makeChecksumAlgorithm();
         crc.update(buf, 0, buf.length);
+        //写入磁盘
         oa.writeLong(crc.getValue(), "txnEntryCRC");
         Util.writeTxnBytes(oa, buf);
 
@@ -305,11 +312,13 @@ public class FileTxnLog implements TxnLog {
      * Find the log file that starts at, or just before, the snapshot. Return
      * this and all subsequent logs. Results are ordered by zxid of file,
      * ascending order.
+     * 该函数的作用是找出刚刚小于或者等于snapshot的所有log文件
      * @param logDirList array of files
      * @param snapshotZxid return files at, or before this zxid
      * @return
      */
     public static File[] getLogFiles(File[] logDirList,long snapshotZxid) {
+        //对文件进行排序
         List<File> files = Util.sortDataDir(logDirList, LOG_FILE_PREFIX, true);
         long logZxid = 0;
         // Find the log file that starts before or at the same time as the
@@ -405,7 +414,7 @@ public class FileTxnLog implements TxnLog {
                             + "File size is " + channel.size() + " bytes. "
                             + "See the ZooKeeper troubleshooting guide");
                 }
-                
+
                 ServerMetrics.getMetrics().FSYNC_TIME.add(syncElapsedMS);
             }
         }

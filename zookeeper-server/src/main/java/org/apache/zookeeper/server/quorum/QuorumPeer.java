@@ -1011,7 +1011,10 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         if (!getView().containsKey(myid)) {
             throw new RuntimeException("My id " + myid + " not in the peer list");
          }
+        //从事务日志目录dataLogDir和数据快照目录dataDir中恢复出DataTree数据
         loadDataBase();
+        //开启对zkClient连接的监听
+        //构建一个reactor线程模型监听客户端请求
         startServerCnxnFactory();
         try {
             adminServer.start();
@@ -1019,6 +1022,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             LOG.warn("Problem starting AdminServer", e);
             System.out.println(e);
         }
+        //进行领导者选举
         startLeaderElection();
         startJvmPauseMonitor();
         super.start();
